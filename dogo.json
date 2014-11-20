@@ -1,0 +1,7 @@
+{
+    "SourceDir": [
+        "{GOPATH}/src/github.com/liudng/dogo/example"
+    ],
+    "BuildCmd": {"Type": 1, "Path": "go.exe", "Args": ["build", "github.com/liudng/dogo/example"]},
+    "RunCmd": {"Type": 1, "Path": "example.exe", "Args": []}
+}
