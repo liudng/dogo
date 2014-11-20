@@ -3,10 +3,12 @@ package main
 import (
 	"github.com/favframework/console"
 	"os"
-	"log"
+	"github.com/favframework/log"
 	"path/filepath"
 	"time"
 	"os/exec"
+	"fmt"
+	"bytes"
 )
 
 //Dogo object
@@ -15,20 +17,26 @@ type Dogo struct {
 	SourceDir []string
 
 	//build command
-	BuildCmd console.Program
+	BuildCmd string
 
 	//run command
-	RunCmd console.Program
+	RunCmd string
 
 
 	//file list
 	files map[string]time.Time
 
-	//is pending build
-	pendingBuild bool
-
 	//Cmd object
 	cmd *exec.Cmd
+
+	//file modified
+	isModified bool
+
+	//build error
+	buildErr string
+
+	//build retry
+	retries int64
 }
 
 //start new monitor
@@ -36,7 +44,13 @@ func (d *Dogo) NewMonitor() {
 	//log.Printf("%#v\n", d.SourceDir)
 
 	if d.SourceDir == nil || len(d.SourceDir) == 0 {
-		log.Fatalf("Error: please edit dogo.json's [SourceDir] node, add some source directories that dogo will monitor it. ")
+		log.Fatalf("Error: please edit dogo.json's [SourceDir] node, add some source directories that dogo will monitor it. \n")
+	}
+	if d.BuildCmd == "" {
+		log.Fatalf("Error: please edit dogo.json's [BuildCmd] node, set build command and arguments. \n")
+	}
+	if d.RunCmd == "" {
+		log.Fatalf("Error: please edit dogo.json's [RunCmd] node, set run command and arguments. \n")
 	}
 
 	d.files = make(map[string]time.Time)
@@ -44,45 +58,61 @@ func (d *Dogo) NewMonitor() {
 	//scan source directories
 	for _, dir := range d.SourceDir {
 		filepath.Walk(dir, func(path string, f os.FileInfo, err error) error{
-			if filepath.Ext(path) == ".go" {
-				d.files[path] = f.ModTime()
-			}
-			return nil
+				if err != nil {
+					log.Printf("%s\n", err)
+					return err
+				}
+
+				if filepath.Ext(path) == ".go" {
+					d.files[path] = f.ModTime()
+				}
+				return nil
 		})
 	}
 
-	//log.Printf("%#v\n", d.files)
+	fmt.Printf("\n")
 
-	//built at first time
-	d.pendingBuild = true
+	d.isModified = false
+
+	d.BuildAndRun()
 
 	for {
 		d.Compare()
 
-		if d.pendingBuild == true {
-			if d.cmd != nil {
-				log.Printf("Killing process: %s...\n", d.cmd.Process.Pid)
-				d.cmd.Process.Kill()
-			}
-
-			if err := d.Build(); err != nil {
-				log.Printf("Build error: %s\n", err)
-			} else {
-				//run program
-				go d.Run()
-			}
+		if d.isModified == true {
+			d.BuildAndRun()
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func (d *Dogo)BuildAndRun() {
+	if d.cmd != nil {
+		d.LogPrintf("Killing process: %d...\n", d.cmd.Process.Pid)
+		if err := d.cmd.Process.Kill(); err != nil {
+			d.LogPrintf("%s\n", err)
+		} else {
+			d.LogPrintf("Kill success.%s\n")
+		}
+	}
+
+	if err := d.Build(); err != nil {
+		d.LogPrintf("Build error: %s\n\n", err)
+	} else {
+		//run program
+		go d.Run()
 	}
 }
 
 //compare source file's modify time
 func (d *Dogo) Compare() {
+	changed := false
+
 	for p, t := range d.files {
 		info, err := os.Stat(p)
 		if err != nil {
-			log.Printf("%s\n", err)
+			d.LogPrintf("%s\n", err)
 			continue
 		}
 
@@ -91,46 +121,68 @@ func (d *Dogo) Compare() {
 
 		if nt.Sub(t) > 0 {
 			d.files[p] = nt
-			d.pendingBuild = true
-			log.Printf("File modified: %s\n", filepath.Base(p))
+			changed = true
+			d.LogPrintf("File modified: %s\n", filepath.Base(p))
 		}
+	}
+
+	if changed == true {
+		//fmt.Printf("\n")
+		d.isModified = true
+	} else {
+		d.isModified = false
 	}
 }
 
 //build
 func (d *Dogo) Build() error {
-	if d.BuildCmd.Path == "" {
-		log.Fatalf("Error: please edit dogo.json's [BuildCmd] node, set build command and arguments. ")
-	}
-
-	log.Printf("Starting build...\n")
-	cmd := exec.Command(d.BuildCmd.Path, d.BuildCmd.Args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	d.LogPrintf("Starting build...\n")
+	args := console.ParseText(d.BuildCmd)
+	cmd := exec.Command(args[0], args[1:]...)
+	//var out bytes.Buffer
+	var ero bytes.Buffer
+	//cmd.Stdin = os.Stdin
+	//cmd.Stdout = &out
+	cmd.Stderr = &ero
 	err := cmd.Run()
 	if err != nil {
+		e := ero.String()
+		if d.buildErr != e {
+			fmt.Printf("%s", e)
+			d.retries = 0
+			d.buildErr = e
+		} else {
+			//fmt.Printf(".")
+			d.retries++
+		}
 		return err
+	} else {
+		d.retries = 0
+		d.buildErr = ""
+		d.LogPrintf("Build success.\n")
+		return nil
 	}
-
-	d.pendingBuild = false
-	log.Printf("build success.\n")
-	return nil
 }
 
 //run it
 func (d *Dogo) Run() {
-	if d.RunCmd.Path == "" {
-		log.Fatalf("Error: please edit dogo.json's [RunCmd] node, set run command and arguments. ")
-	}
-
-	log.Printf("Run program: %s [%#v]\n", d.RunCmd.Path, d.RunCmd.Args)
-	d.cmd = exec.Command(d.RunCmd.Path, d.RunCmd.Args...)
+	d.LogPrintf("Run application: %s\n", d.RunCmd)
+	args := console.ParseText(d.RunCmd)
+	d.cmd = exec.Command(args[0], args[1:]...)
 	d.cmd.Stdin = os.Stdin
 	d.cmd.Stdout = os.Stdout
 	d.cmd.Stderr = os.Stderr
 	err := d.cmd.Run()
 	if err != nil {
-		log.Printf("%s\n", err)
+		d.LogPrintf("%s\n", err)
+	}
+
+	d.cmd = nil
+	d.LogPrintf("Application exited with status 0.\n")
+}
+
+func (d *Dogo) LogPrintf(format string, v ...interface{}) {
+	if d.retries == 0 {
+		log.Printf(format, v...)
 	}
 }

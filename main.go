@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/favframework/config"
+	"github.com/favframework/console"
 )
 
 var WorkingDir string = config.WorkingDir()
@@ -11,7 +12,10 @@ func main(){
 
 	var dogo Dogo
 
-	config.LoadJSONFile(&dogo, WorkingDir+"/dogo.json", nil)
+	r := make(map[string]string)
+	r["{GOPATH}"] = console.Getenv("GOPATH")
+
+	config.LoadJSONFile(&dogo, WorkingDir+"/dogo.json", r)
 
 	dogo.NewMonitor()
 }
