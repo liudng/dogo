@@ -21,8 +21,8 @@ dogo load config file from current directory. config file like bellow:
     "SourceDir": [
         "{GOPATH}/src/github.com/liudng/dogo/example"
     ],
-    "BuildCmd": {"Type": 1, "Path": "go.exe", "Args": ["build", "github.com/liudng/dogo/example"]},
-    "RunCmd": {"Type": 1, "Path": "example.exe", "Args": []}
+    "BuildCmd": "go build github.com/liudng/dogo/example",
+    "RunCmd": "example.exe"
 }
 ```
 
@@ -31,3 +31,17 @@ SourceDir: the list of source directories.
 BuildCmd: build and compile command, same as hand type: go.exe build github.com/liudng/dogo/example
 
 RunCmd: the program (full) path.
+
+## Start monitoring
+
+type the command to start:
+
+```sh
+dogo
+```
+
+or, specify config file with -c
+
+```sh
+dogo -c=/path/to/dogo.json
+```
