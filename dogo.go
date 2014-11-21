@@ -37,22 +37,20 @@ type Dogo struct {
 
 	//build retry
 	retries int64
-
-	hadOutput bool
 }
 
 //start new monitor
 func (d *Dogo) NewMonitor() {
-	//log.Printf("%#v\n", d.SourceDir)
+	//fmt.Printf("%#v\n", d.SourceDir)
 
 	if d.SourceDir == nil || len(d.SourceDir) == 0 {
-		log.Fatalf("Error: please edit dogo.json's [SourceDir] node, add some source directories that dogo will monitor it. \n")
+		log.Fatalf("[dogo] dogo.json (SourceDir) error. \n")
 	}
 	if d.BuildCmd == "" {
-		log.Fatalf("Error: please edit dogo.json's [BuildCmd] node, set build command and arguments. \n")
+		log.Fatalf("[dogo] dogo.json (BuildCmd) error. \n")
 	}
 	if d.RunCmd == "" {
-		log.Fatalf("Error: please edit dogo.json's [RunCmd] node, set run command and arguments. \n")
+		log.Fatalf("[dogo] dogo.json (RunCmd) error. \n")
 	}
 
 	d.files = make(map[string]time.Time)
@@ -72,17 +70,17 @@ func (d *Dogo) NewMonitor() {
 		})
 	}
 
-	//d.FmtPrintf("-------------------------------------------------------------------------------\n")
+	d.Monitor()
+
+	//FIXME: add console support.
+
+	//FIXME: moniting directories.
+}
+
+func (d *Dogo)Monitor() {
 	d.BuildAndRun()
-	//d.hadOutput = false
 
 	for {
-		//if d.hadOutput == true {
-		//	d.FmtPrintf("-------------------------------------------------------------------------------\n")
-		//}
-
-		d.hadOutput = false
-
 		d.Compare()
 
 		if d.isModified == true {
@@ -110,7 +108,7 @@ func (d *Dogo) Compare() {
 		if nt.Sub(t) > 0 {
 			d.files[p] = nt
 			changed = true
-			d.FmtPrintf("File modified: %s\n", filepath.Base(p))
+			d.FmtPrintf("[dogo] Changed files: %s\n", filepath.Base(p))
 		}
 	}
 
@@ -123,7 +121,7 @@ func (d *Dogo) Compare() {
 
 func (d *Dogo)BuildAndRun() {
 	if d.cmd != nil {
-		d.FmtPrintf("Killing process %d: ", d.cmd.Process.Pid)
+		d.FmtPrintf("[dogo] Terminate the process %d: ", d.cmd.Process.Pid)
 		if err := d.cmd.Process.Kill(); err != nil {
 			d.FmtPrintf("\n%s\n", err)
 		} else {
@@ -132,17 +130,17 @@ func (d *Dogo)BuildAndRun() {
 	}
 
 	if err := d.Build(); err != nil {
-		d.FmtPrintf("Build failed: %s\n\n", err)
+		d.FmtPrintf("[dogo] Build failed: %s\n\n", err)
 	} else {
 		//run program
-		d.FmtPrintf("Run application: %s\n\n", d.RunCmd)
+		d.FmtPrintf("[dogo] Start the process: %s\n\n", d.RunCmd)
 		go d.Run()
 	}
 }
 
 //build
 func (d *Dogo) Build() error {
-	d.FmtPrintf("Starting build: ")
+	d.FmtPrintf("[dogo] Start build: ")
 	args := console.ParseText(d.BuildCmd)
 	cmd := exec.Command(args[0], args[1:]...)
 	//var out bytes.Buffer
@@ -188,14 +186,12 @@ func (d *Dogo) Run() {
 
 func (d *Dogo) LogPrintf(format string, v ...interface{}) {
 	if d.retries == 0 {
-		d.hadOutput = true
 		log.Printf(format, v...)
 	}
 }
 
 func (d *Dogo) FmtPrintf(format string, v ...interface{}) {
 	if d.retries == 0 {
-		d.hadOutput = true
 		fmt.Printf(format, v...)
 	}
 }

@@ -4,19 +4,19 @@
 [![Coverage](http://gocover.io/_badge/github.com/liudng/dogo)](http://gocover.io/github.com/liudng/dogo)
 [![GoDoc](https://godoc.org/github.com/liudng/dogo?status.png)](http://godoc.org/github.com/liudng/dogo)
 
-Monitoring changes in the source file and automatically compile and run (restart).
+当源文件发生改变时, 自动重新编译并运行(或重启). 适用于开发服务端程序时快速调试.
 
-[中文](README-ZH.md)
+[English](README.md)
 
-## Install
+## 安装
 
 ```bash
 go get github.com/liudng/dogo
 ```
 
-## Create config
+## 创建配置文件
 
-dogo load config file from current directory. config file like bellow:
+dogo 的配置文件格式如下:
 
 ```json
 {
@@ -28,21 +28,21 @@ dogo load config file from current directory. config file like bellow:
 }
 ```
 
-SourceDir: the list of source directories.
+SourceDir: 监控源文件目录清单.
 
-BuildCmd: build and compile command, same as hand type: go.exe build github.com/liudng/dogo/example
+BuildCmd: 编译命令
 
-RunCmd: the program (full) path.
+RunCmd: 运行命令.
 
-## Start monitoring
+## 开始监控
 
-type the command to start:
+输入下面的命令(当前目录下存在dogo.json文件):
 
 ```sh
 dogo
 ```
 
-or, specify config file with -c
+或者用-c参数指定配置文件路径
 
 ```sh
 dogo -c=/path/to/dogo.json
