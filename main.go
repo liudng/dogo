@@ -1,14 +1,20 @@
+// Copyright 2014 The dogo Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
+	"flag"
+	"fmt"
 	"github.com/favframework/config"
 	"github.com/favframework/console"
-	"flag"
+	"strings"
 )
 
 var WorkingDir string = config.WorkingDir()
 
-func main(){
+func main() {
 	//log.Printf("%s\n", WorkingDir)
 
 	var c string
@@ -17,10 +23,19 @@ func main(){
 
 	var dogo Dogo
 
-	r := make(map[string]string)
-	r["{GOPATH}"] = console.Getenv("GOPATH")
+	gopath := console.Getenv("GOPATH")
 
-	config.LoadJSONFile(&dogo, c, r)
+	r := make(map[string]string)
+	r["{GOPATH}"] = gopath
+
+	c = strings.Replace(c, "{GOPATH}", gopath, -1)
+
+	err := config.LoadJSONFile(&dogo, c, r)
+	if err != nil {
+		fmt.Println("[dogo] No config file loaded.")
+	} else {
+		fmt.Println("[dogo] Load config file: ", c)
+	}
 
 	dogo.NewMonitor()
 }

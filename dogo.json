@@ -1,7 +1,9 @@
 {
+    "WorkingDir": "{GOPATH}/src/github.com/liudng/dogo/example",
     "SourceDir": [
         "{GOPATH}/src/github.com/liudng/dogo/example"
     ],
+    "SourceExt": ".go|.c|.cpp|.h",
     "BuildCmd": "go build github.com/liudng/dogo/example",
     "RunCmd": "example.exe"
 }

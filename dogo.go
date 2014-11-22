@@ -1,14 +1,19 @@
+// Copyright 2014 The dogo Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
-	"github.com/favframework/console"
-	"os"
-	"log"
-	"path/filepath"
-	"time"
-	"os/exec"
 	"fmt"
-	"bytes"
+	"github.com/favframework/console"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
 )
 
 //Dogo object
@@ -16,12 +21,17 @@ type Dogo struct {
 	//source files
 	SourceDir []string
 
+	//file extends
+	SourceExt string
+
+	//Working Dir
+	WorkingDir string
+
 	//build command
 	BuildCmd string
 
 	//run command
 	RunCmd string
-
 
 	//file list
 	files map[string]time.Time
@@ -43,41 +53,96 @@ type Dogo struct {
 func (d *Dogo) NewMonitor() {
 	//fmt.Printf("%#v\n", d.SourceDir)
 
-	if d.SourceDir == nil || len(d.SourceDir) == 0 {
-		log.Fatalf("[dogo] dogo.json (SourceDir) error. \n")
+	if d.WorkingDir == "" {
+		//log.Fatalf("[dogo] dogo.json (BuildCmd) error. \n")
+		d.WorkingDir = WorkingDir
+	}
+	if len(d.SourceDir) == 0 {
+		//log.Fatalf("[dogo] dogo.json (SourceDir) error. \n")
+		d.SourceDir = append(d.SourceDir, WorkingDir)
+	}
+	if d.SourceExt == "" {
+		//log.Fatalf("[dogo] dogo.json (SourceExt) error. \n")
+		d.SourceExt = ".go|.c|.cpp|.h"
 	}
 	if d.BuildCmd == "" {
-		log.Fatalf("[dogo] dogo.json (BuildCmd) error. \n")
+		//log.Fatalf("[dogo] dogo.json (BuildCmd) error. \n")
+		d.BuildCmd = "go build ."
 	}
 	if d.RunCmd == "" {
-		log.Fatalf("[dogo] dogo.json (RunCmd) error. \n")
+		//log.Fatalf("[dogo] dogo.json (RunCmd) error. \n")
+		d.RunCmd = filepath.Base(WorkingDir)
+		if runtime.GOOS == "windows" {
+			d.RunCmd += ".exe"
+		}
 	}
+
+	console.Chdir(d.WorkingDir)
+
+	fmt.Printf("[dogo] Working Directory:\n")
+	fmt.Printf("       %s\n", d.WorkingDir)
+
+	fmt.Printf("[dogo] Monitoring Directories:\n")
+	for _, dir := range d.SourceDir {
+		fmt.Printf("       %s\n", dir)
+	}
+
+	fmt.Printf("[dogo] File extends:\n")
+	fmt.Printf("       %s\n", d.SourceExt)
+
+	fmt.Printf("[dogo] Build command:\n")
+	fmt.Printf("       %s\n", d.BuildCmd)
+
+	fmt.Printf("[dogo] Run command:\n")
+	fmt.Printf("       %s\n", d.RunCmd)
 
 	d.files = make(map[string]time.Time)
 
-	//scan source directories
-	for _, dir := range d.SourceDir {
-		filepath.Walk(dir, func(path string, f os.FileInfo, err error) error{
-				if err != nil {
-					d.FmtPrintf("%s\n", err)
-					return err
-				}
+	d.Files()
 
-				if filepath.Ext(path) == ".go" {
-					d.files[path] = f.ModTime()
-				}
-				return nil
-		})
+	l := len(d.files)
+
+	if l > 0 {
+		fmt.Printf("[dogo] Ready. %d files to be monitored.\n\n", l)
+	} else {
+		fmt.Printf("[dogo] Error. Did not find any files.\n\n")
+		os.Exit(0)
 	}
 
 	d.Monitor()
 
 	//FIXME: add console support.
 
-	//FIXME: moniting directories.
+	//FIXME: moniting directories: add file, delete file.
+
+	//FIXME: Multi commands.
 }
 
-func (d *Dogo)Monitor() {
+func (d *Dogo) Files() {
+	extends := strings.Split(d.SourceExt, "|")
+
+	//scan source directories
+	for _, dir := range d.SourceDir {
+		filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+			if err != nil {
+				d.FmtPrintf("%s\n", err)
+				return err
+			}
+
+			for _, ext := range extends {
+				if filepath.Ext(path) == ext {
+					//fmt.Println(path)
+					d.files[path] = f.ModTime()
+					break
+				}
+			}
+
+			return nil
+		})
+	}
+}
+
+func (d *Dogo) Monitor() {
 	d.BuildAndRun()
 
 	for {
@@ -87,7 +152,7 @@ func (d *Dogo)Monitor() {
 			d.BuildAndRun()
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Duration(1 * time.Second))
 	}
 }
 
@@ -119,7 +184,7 @@ func (d *Dogo) Compare() {
 	}
 }
 
-func (d *Dogo)BuildAndRun() {
+func (d *Dogo) BuildAndRun() {
 	if d.cmd != nil {
 		d.FmtPrintf("[dogo] Terminate the process %d: ", d.cmd.Process.Pid)
 		if err := d.cmd.Process.Kill(); err != nil {
@@ -142,19 +207,13 @@ func (d *Dogo)BuildAndRun() {
 func (d *Dogo) Build() error {
 	d.FmtPrintf("[dogo] Start build: ")
 	args := console.ParseText(d.BuildCmd)
-	cmd := exec.Command(args[0], args[1:]...)
-	//var out bytes.Buffer
-	var ero bytes.Buffer
-	//cmd.Stdin = os.Stdin
-	//cmd.Stdout = &out
-	cmd.Stderr = &ero
-	err := cmd.Run()
+	out, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
-		e := ero.String()
-		if d.buildErr != e {
-			d.FmtPrintf("\n%s", e)
+		fullOut := string(out)
+		if d.buildErr != fullOut {
+			d.FmtPrintf("\n%s", fullOut)
 			d.retries = 0
-			d.buildErr = e
+			d.buildErr = fullOut
 		} else {
 			//d.FmtPrintf(".")
 			d.retries++

@@ -16,23 +16,29 @@ go get github.com/liudng/dogo
 
 ## Create config
 
-dogo load config file from current directory. config file like bellow:
+Here are config file sample, save file as **dogo.json**:
 
 ```json
 {
+    "WorkingDir": "{GOPATH}/src/github.com/liudng/dogo/example",
     "SourceDir": [
         "{GOPATH}/src/github.com/liudng/dogo/example"
     ],
+    "SourceExt": ".go|.c|.cpp|.h",
     "BuildCmd": "go build github.com/liudng/dogo/example",
     "RunCmd": "example.exe"
 }
 ```
 
-SourceDir: the list of source directories.
+**WorkingDir**: working directory, dogo will auto change to this directory.
 
-BuildCmd: build and compile command, same as hand type: go.exe build github.com/liudng/dogo/example
+**SourceDir**: the list of source directories.
 
-RunCmd: the program (full) path.
+**SourceExt**: monitoring file type.
+
+**BuildCmd**: the command of build and compile.
+
+**RunCmd**: the program (full) path.
 
 ## Start monitoring
 
@@ -47,3 +53,9 @@ or, specify config file with -c
 ```sh
 dogo -c=/path/to/dogo.json
 ```
+
+the path can contain {GOPATH}.
+
+## screen capture
+
+![windows screen](screen2.png)
