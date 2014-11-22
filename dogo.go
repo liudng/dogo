@@ -34,7 +34,7 @@ type Dogo struct {
 	RunCmd string
 
 	//file list
-	files map[string]time.Time
+	Files map[string]time.Time
 
 	//Cmd object
 	cmd *exec.Cmd
@@ -96,20 +96,17 @@ func (d *Dogo) NewMonitor() {
 	fmt.Printf("[dogo] Run command:\n")
 	fmt.Printf("       %s\n", d.RunCmd)
 
-	d.files = make(map[string]time.Time)
+	d.Files = make(map[string]time.Time)
 
-	d.Files()
+	d.InitFiles()
 
-	l := len(d.files)
+	l := len(d.Files)
 
 	if l > 0 {
 		fmt.Printf("[dogo] Ready. %d files to be monitored.\n\n", l)
 	} else {
 		fmt.Printf("[dogo] Error. Did not find any files.\n\n")
-		os.Exit(0)
 	}
-
-	d.Monitor()
 
 	//FIXME: add console support.
 
@@ -118,7 +115,7 @@ func (d *Dogo) NewMonitor() {
 	//FIXME: Multi commands.
 }
 
-func (d *Dogo) Files() {
+func (d *Dogo) InitFiles() {
 	extends := strings.Split(d.SourceExt, "|")
 
 	//scan source directories
@@ -132,7 +129,7 @@ func (d *Dogo) Files() {
 			for _, ext := range extends {
 				if filepath.Ext(path) == ext {
 					//fmt.Println(path)
-					d.files[path] = f.ModTime()
+					d.Files[path] = f.ModTime()
 					break
 				}
 			}
@@ -143,8 +140,6 @@ func (d *Dogo) Files() {
 }
 
 func (d *Dogo) Monitor() {
-	d.BuildAndRun()
-
 	for {
 		d.Compare()
 
@@ -160,7 +155,7 @@ func (d *Dogo) Monitor() {
 func (d *Dogo) Compare() {
 	changed := false
 
-	for p, t := range d.files {
+	for p, t := range d.Files {
 		info, err := os.Stat(p)
 		if err != nil {
 			d.FmtPrintf("%s\n", err)
@@ -171,7 +166,7 @@ func (d *Dogo) Compare() {
 		nt := info.ModTime()
 
 		if nt.Sub(t) > 0 {
-			d.files[p] = nt
+			d.Files[p] = nt
 			changed = true
 			d.FmtPrintf("[dogo] Changed files: %s\n", filepath.Base(p))
 		}

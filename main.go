@@ -15,12 +15,14 @@ import (
 var WorkingDir string = config.WorkingDir()
 
 func main() {
-	//log.Printf("%s\n", WorkingDir)
-
 	var c string
 	flag.StringVar(&c, "c", WorkingDir+"/dogo.json", "Usage: dogo -c=/path/to/dogo.json")
 	flag.Parse()
 
+	New(c)
+}
+
+func New(c string) {
 	var dogo Dogo
 
 	gopath := console.Getenv("GOPATH")
@@ -38,4 +40,6 @@ func main() {
 	}
 
 	dogo.NewMonitor()
+	dogo.BuildAndRun()
+	dogo.Monitor()
 }

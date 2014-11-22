@@ -8,6 +8,13 @@ import (
 	"testing"
 )
 
-func TestPathToMethod(t *testing.T) {
+func TestInitFiles(t *testing.T) {
+	var dogo Dogo
 
+	dogo.NewMonitor()
+
+	l := len(dogo.Files)
+	if l != 4 {
+		t.Fatalf("Init source files failed: %d.\n", l)
+	}
 }
