@@ -34,12 +34,23 @@ func New(c string) {
 
 	err := config.LoadJSONFile(&dogo, c, r)
 	if err != nil {
-		fmt.Println("[dogo] No config file loaded.")
+		fmt.Println("[dogo] Warning: no configuration file loaded.")
 	} else {
-		fmt.Println("[dogo] Load config file: ", c)
+		fmt.Println("[dogo] Loaded configuration file: ", c)
 	}
 
 	dogo.NewMonitor()
-	dogo.BuildAndRun()
-	dogo.Monitor()
+
+	l := len(dogo.Files)
+	if l > 0 {
+		fmt.Printf("[dogo] Ready. %d files to be monitored.\n\n", l)
+
+		dogo.BuildAndRun()
+
+		dogo.Monitor()
+	} else {
+		fmt.Printf("[dogo] Error. Did not find any files. Press any key to exit.\n\n")
+		var a string
+		fmt.Scanf("%s", &a)
+	}
 }

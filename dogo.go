@@ -100,14 +100,6 @@ func (d *Dogo) NewMonitor() {
 
 	d.InitFiles()
 
-	l := len(d.Files)
-
-	if l > 0 {
-		fmt.Printf("[dogo] Ready. %d files to be monitored.\n\n", l)
-	} else {
-		fmt.Printf("[dogo] Error. Did not find any files.\n\n")
-	}
-
 	//FIXME: add console support.
 
 	//FIXME: moniting directories: add file, delete file.
@@ -205,7 +197,7 @@ func (d *Dogo) Build() error {
 	out, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
 		fullOut := string(out)
-		if d.buildErr != fullOut {
+		if d.buildErr == "" || d.buildErr != fullOut {
 			d.FmtPrintf("\n%s", fullOut)
 			d.retries = 0
 			d.buildErr = fullOut
