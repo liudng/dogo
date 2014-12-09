@@ -7,8 +7,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/favframework/config"
-	"github.com/favframework/console"
+	"github.com/liudng/fav/config"
+	"github.com/liudng/fav/console"
 	"strings"
 )
 
