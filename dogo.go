@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/liudng/fav/console"
+	"github.com/favframework/console"
 	"log"
 	"os"
 	"os/exec"
