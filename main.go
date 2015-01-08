@@ -7,8 +7,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/favframework/config"
-	"github.com/favframework/console"
+	"github.com/zhgo/config"
+	"github.com/zhgo/console"
 	"strings"
 )
 

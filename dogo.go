@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/favframework/console"
+	"github.com/zhgo/console"
 	"log"
 	"os"
 	"os/exec"
