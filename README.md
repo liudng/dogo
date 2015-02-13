@@ -6,7 +6,7 @@
 
 Monitoring changes in the source file and automatically compile and run (restart).
 
-[中文](README-ZH.md)
+[中文](doc/zh/README.md)
 
 ## Install
 
@@ -40,6 +40,8 @@ Here are config file sample, save file as **dogo.json**:
 
 **RunCmd**: the program (full) path.
 
+**Decreasing**: Ignore the number of modifies, after build.
+
 ## Start monitoring
 
 type the command to start:
@@ -58,4 +60,4 @@ the path can contain {GOPATH}.
 
 ## screen capture
 
-![windows screen](screen2.png)
+![windows screen](doc/en/img/screen2.png)

@@ -6,7 +6,7 @@
 
 当源文件发生改变时, 自动重新编译并运行(或重启). 适用于开发服务端程序时快速调试.
 
-[English](README.md)
+[English](https://github.com/liudng/dogo/blob/master/README.md)
 
 ## 特点
 
@@ -48,6 +48,8 @@ dogo 的配置文件格式如下:
 
 **RunCmd**: 运行命令.
 
+**Decreasing**: 编译通过后, 忽略后续更新次数(默认为1, 如果发生不停循环编译, 可增加此值), 此值过大会减缓文件监控响应.
+
 ## 开始监控
 
 输入下面的命令(如果当前目录下存在dogo.json文件, 会自动载入):
@@ -66,4 +68,4 @@ dogo -c=/path/to/dogo.json
 
 ## screen capture
 
-![windows screen](screen2.png)
+![windows screen](img/screen2.png)

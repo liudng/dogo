@@ -14,7 +14,7 @@ func TestInitFiles(t *testing.T) {
 	dogo.NewMonitor()
 
 	l := len(dogo.Files)
-	if l != 4 {
+	if l != 7 {
 		t.Fatalf("Init source files failed: %d.\n", l)
 	}
 }

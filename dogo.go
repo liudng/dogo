@@ -16,8 +16,14 @@ import (
 	"time"
 )
 
-//Dogo object
+//Dogo struct
 type Dogo struct {
+	//Decreasing
+	Decreasing uint8
+
+	//decreasing
+	decreasing uint8
+
 	//source files
 	SourceDir []string
 
@@ -47,6 +53,8 @@ type Dogo struct {
 
 	//build retry
 	retries int64
+
+	runCount int64
 }
 
 //start new monitor
@@ -97,7 +105,6 @@ func (d *Dogo) NewMonitor() {
 	fmt.Printf("       %s\n", d.RunCmd)
 
 	d.Files = make(map[string]time.Time)
-
 	d.InitFiles()
 
 	//FIXME: add console support.
@@ -131,48 +138,8 @@ func (d *Dogo) InitFiles() {
 	}
 }
 
-func (d *Dogo) Monitor() {
-	for {
-		d.Compare()
-
-		if d.isModified == true {
-			d.BuildAndRun()
-		}
-
-		time.Sleep(time.Duration(1 * time.Second))
-	}
-}
-
-//compare source file's modify time
-func (d *Dogo) Compare() {
-	changed := false
-
-	for p, t := range d.Files {
-		info, err := os.Stat(p)
-		if err != nil {
-			d.FmtPrintf("%s\n", err)
-			continue
-		}
-
-		//new modtime
-		nt := info.ModTime()
-
-		if nt.Sub(t) > 0 {
-			d.Files[p] = nt
-			changed = true
-			d.FmtPrintf("[dogo] Changed files: %s\n", filepath.Base(p))
-		}
-	}
-
-	if changed == true {
-		d.isModified = true
-	} else {
-		d.isModified = false
-	}
-}
-
 func (d *Dogo) BuildAndRun() {
-	if d.cmd != nil {
+	if d.cmd != nil && d.cmd.Process != nil {
 		d.FmtPrintf("[dogo] Terminate the process %d: ", d.cmd.Process.Pid)
 		if err := d.cmd.Process.Kill(); err != nil {
 			d.FmtPrintf("\n%s\n", err)
@@ -186,6 +153,10 @@ func (d *Dogo) BuildAndRun() {
 	} else {
 		//run program
 		d.FmtPrintf("[dogo] Start the process: %s\n\n", d.RunCmd)
+		if d.runCount > 0 {
+			d.decreasing = d.Decreasing
+		}
+		d.runCount++
 		go d.Run()
 	}
 }
@@ -228,6 +199,7 @@ func (d *Dogo) Run() {
 		d.cmd = nil
 		//fmt.Printf("exit status 0.\n")
 	}
+	//d.isRunning = false
 }
 
 func (d *Dogo) LogPrintf(format string, v ...interface{}) {
