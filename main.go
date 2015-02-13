@@ -49,7 +49,7 @@ func New(c string) {
 
 		dogo.Monitor()
 	} else {
-		fmt.Printf("[dogo] Error. Did not find any files. Press any key to exit.\n\n")
+		fmt.Printf("[dogo] Error: Did not find any files. Press any key to exit.\n\n")
 		var a string
 		fmt.Scanf("%s", &a)
 	}
