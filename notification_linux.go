@@ -4,7 +4,3 @@
 
 // http://www.ibm.com/developerworks/linux/library/l-ubuntu-inotify/index.html
 package main
-
-func WatchDirectory(dir string) {
-
-}

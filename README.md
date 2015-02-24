@@ -26,7 +26,8 @@ Here are config file sample, save file as **dogo.json**:
     ],
     "SourceExt": ".go|.c|.cpp|.h",
     "BuildCmd": "go build github.com/liudng/dogo/example",
-    "RunCmd": "example.exe"
+    "RunCmd": "example.exe",
+    "Decreasing": 1
 }
 ```
 

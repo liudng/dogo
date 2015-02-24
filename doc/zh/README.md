@@ -34,7 +34,8 @@ dogo 的配置文件格式如下:
     ],
     "SourceExt": ".go|.c|.cpp|.h",
     "BuildCmd": "go build github.com/liudng/dogo/example",
-    "RunCmd": "example.exe"
+    "RunCmd": "example.exe",
+    "Decreasing": 1
 }
 ```
 
