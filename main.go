@@ -7,16 +7,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/zhgo/kernel"
 	"github.com/zhgo/config"
 	"github.com/zhgo/console"
 	"strings"
 )
 
-var WorkingDir string = config.WorkingDir()
-
 func main() {
 	var c string
-	flag.StringVar(&c, "c", WorkingDir+"/dogo.json", "Usage: dogo -c=/path/to/dogo.json")
+	flag.StringVar(&c, "c", kernel.WorkingDir+"/dogo.json", "Usage: dogo -c=/path/to/dogo.json")
 	flag.Parse()
 
 	New(c)

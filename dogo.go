@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+    "github.com/zhgo/kernel"
 )
 
 //Dogo struct
@@ -63,11 +64,11 @@ func (d *Dogo) NewMonitor() {
 
 	if d.WorkingDir == "" {
 		//log.Fatalf("[dogo] dogo.json (BuildCmd) error. \n")
-		d.WorkingDir = WorkingDir
+		d.WorkingDir = kernel.WorkingDir
 	}
 	if len(d.SourceDir) == 0 {
 		//log.Fatalf("[dogo] dogo.json (SourceDir) error. \n")
-		d.SourceDir = append(d.SourceDir, WorkingDir)
+		d.SourceDir = append(d.SourceDir, kernel.WorkingDir)
 	}
 	if d.SourceExt == "" {
 		//log.Fatalf("[dogo] dogo.json (SourceExt) error. \n")
@@ -79,7 +80,7 @@ func (d *Dogo) NewMonitor() {
 	}
 	if d.RunCmd == "" {
 		//log.Fatalf("[dogo] dogo.json (RunCmd) error. \n")
-		d.RunCmd = filepath.Base(WorkingDir)
+		d.RunCmd = filepath.Base(kernel.WorkingDir)
 		if runtime.GOOS == "windows" {
 			d.RunCmd += ".exe"
 		}
