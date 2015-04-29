@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/liudng/dogo.svg)](https://travis-ci.org/liudng/dogo)
 [![Coverage](http://gocover.io/_badge/github.com/liudng/dogo)](http://gocover.io/github.com/liudng/dogo)
-[![License](https://img.shields.io/badge/license-BSD-ff69b4.svg?style=flat)](https://github.com/liudng/dogo/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/license-BSD-blue.svg?style=flat)](https://github.com/liudng/dogo/blob/master/LICENSE)
 
 Monitoring changes in the source file and automatically compile and run (restart).
 

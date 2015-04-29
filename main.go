@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zhgo/kernel"
-	"github.com/zhgo/config"
 	"github.com/zhgo/console"
 	"strings"
 )
@@ -31,8 +30,9 @@ func New(c string) {
 
 	c = strings.Replace(c, "{GOPATH}", gopath, -1)
 
-	err := config.LoadJSONFile(&dogo, c, r)
-	if err != nil {
+    cfg := kernel.NewConfig(kernel.ConfigFile, c, r)
+    err := cfg.Parse(&dogo)
+    if err != nil {
 		fmt.Println("[dogo] Warning: no configuration file loaded.")
 	} else {
 		fmt.Println("[dogo] Loaded configuration file: ", c)
