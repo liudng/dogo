@@ -7,14 +7,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/zhgo/kernel"
 	"github.com/zhgo/console"
 	"strings"
 )
 
 func main() {
 	var c string
-	flag.StringVar(&c, "c", kernel.WorkingDir+"/dogo.json", "Usage: dogo -c=/path/to/dogo.json")
+	flag.StringVar(&c, "c", console.WorkingDir+"/dogo.json", "Usage: dogo -c=/path/to/dogo.json")
 	flag.Parse()
 
 	New(c)
@@ -30,7 +29,7 @@ func New(c string) {
 
 	c = strings.Replace(c, "{GOPATH}", gopath, -1)
 
-    cfg := kernel.NewConfig(kernel.ConfigFile, c, r)
+    cfg := console.NewConfig(console.ConfigFile, c, r)
     err := cfg.Parse(&dogo)
     if err != nil {
 		fmt.Println("[dogo] Warning: no configuration file loaded.")
