@@ -85,8 +85,10 @@ func (d *Dogo) NewMonitor() {
 		}
 	}
 
-	console.Chdir(d.WorkingDir)
+	// Append the current directory to the PATH for compatible linux.
+	console.Setenv("PATH", console.Getenv("PATH")+string(os.PathListSeparator)+d.WorkingDir)
 
+	console.Chdir(d.WorkingDir)
 	fmt.Printf("[dogo] Working Directory:\n")
 	fmt.Printf("       %s\n", d.WorkingDir)
 
@@ -194,12 +196,10 @@ func (d *Dogo) Run() {
 	d.cmd.Stderr = os.Stderr
 	err := d.cmd.Run()
 	if err != nil {
-		//fmt.Printf("%s\n", err)
+		fmt.Printf("%s\n", err)
 	} else {
 		d.cmd = nil
-		//fmt.Printf("exit status 0.\n")
 	}
-	//d.isRunning = false
 }
 
 func (d *Dogo) LogPrintf(format string, v ...interface{}) {

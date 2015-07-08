@@ -41,7 +41,7 @@ func (d *Dogo) Monitor() {
 		if dwWaitStatus >= 0 && dwWaitStatus < handlesCount {
 			if d.decreasing > 0 {
 				d.decreasing--
-				//d.FmtPrintf("[dogo] Decreasing: %v\n", d.SourceDir[dwWaitStatus])
+				d.FmtPrintf("[dogo] Decreasing %d: %v\n", d.decreasing, d.SourceDir[dwWaitStatus])
 			} else {
 				d.isModified = true
 				d.FmtPrintf("[dogo] Changed files: %v\n", d.SourceDir[dwWaitStatus])
