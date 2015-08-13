@@ -8,10 +8,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zhgo/console"
+	"runtime"
 	"strings"
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	var c string
 	flag.StringVar(&c, "c", console.WorkingDir+"/dogo.json", "Usage: dogo -c=/path/to/dogo.json")
 	flag.Parse()
@@ -21,8 +24,8 @@ func main() {
 	gopath := console.Getenv("GOPATH")
 	c = strings.Replace(c, "{GOPATH}", gopath, -1)
 	r := map[string]string{"{GOPATH}": gopath}
-    err := console.NewConfig(c).Replace(r).Parse(&dogo)
-    if err != nil {
+	err := console.NewConfig(c).Replace(r).Parse(&dogo)
+	if err != nil {
 		fmt.Printf("[dogo] Warning: no configuration file loaded.\n")
 	} else {
 		fmt.Printf("[dogo] Loaded configuration file:\n")

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"syscall"
 	"time"
@@ -29,6 +30,8 @@ func (d *Dogo) Monitor() {
 		}
 	}
 
+	var decreasing uint8
+
 	// Change notification is set. Now wait on both notification
 	// handles and refresh accordingly.
 	for {
@@ -39,13 +42,14 @@ func (d *Dogo) Monitor() {
 		}
 
 		if dwWaitStatus >= 0 && dwWaitStatus < handlesCount {
-			if d.decreasing > 0 {
-				d.decreasing--
-				d.FmtPrintf("[dogo] Decreasing %d: %v\n", d.decreasing, d.SourceDir[dwWaitStatus])
+			if decreasing > 0 {
+				decreasing--
+				fmt.Printf("[dogo] Decreasing %d: %v\n", decreasing, d.SourceDir[dwWaitStatus])
 			} else {
 				d.isModified = true
-				d.FmtPrintf("[dogo] Changed files: %v\n", d.SourceDir[dwWaitStatus])
+				fmt.Printf("[dogo] Changed files: %v\n", d.SourceDir[dwWaitStatus])
 				d.BuildAndRun()
+				decreasing = d.Decreasing
 				time.Sleep(time.Duration(1 * time.Second))
 			}
 			// A file was created, renamed, deleted, or modify in the directory.
@@ -57,7 +61,7 @@ func (d *Dogo) Monitor() {
 			// than INFINITE is used in the Wait call and no changes occur.
 			// In a single-threaded environment you might not want an
 			// INFINITE wait.
-			d.FmtPrintf("[dogo] No changes in the timeout period.\n")
+			fmt.Printf("[dogo] No changes in the timeout period.\n")
 		} else {
 			log.Fatal("[dogo] Error: Unhandled dwWaitStatus.\n")
 		}

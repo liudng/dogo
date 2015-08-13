@@ -7,28 +7,23 @@ package main
 import (
 	"fmt"
 	"github.com/zhgo/console"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
 )
 
 //Dogo struct
 type Dogo struct {
-	//Decreasing
-	Decreasing uint8
-
-	//decreasing
-	decreasing uint8
-
 	//source files
 	SourceDir []string
 
+	//source files
+	sourceDir []string
+
 	//file extends
-	SourceExt string
+	SourceExt []string
 
 	//Working Dir
 	WorkingDir string
@@ -39,6 +34,9 @@ type Dogo struct {
 	//run command
 	RunCmd string
 
+	//Decreasing
+	Decreasing uint8
+
 	//file list
 	Files map[string]time.Time
 
@@ -47,38 +45,23 @@ type Dogo struct {
 
 	//file modified
 	isModified bool
-
-	//build error
-	buildErr string
-
-	//build retry
-	retries int64
-
-	runCount int64
 }
 
 //start new monitor
 func (d *Dogo) NewMonitor() {
-	//fmt.Printf("%#v\n", d.SourceDir)
-
 	if d.WorkingDir == "" {
-		//log.Fatalf("[dogo] dogo.json (BuildCmd) error. \n")
 		d.WorkingDir = console.WorkingDir
 	}
 	if len(d.SourceDir) == 0 {
-		//log.Fatalf("[dogo] dogo.json (SourceDir) error. \n")
 		d.SourceDir = append(d.SourceDir, console.WorkingDir)
 	}
-	if d.SourceExt == "" {
-		//log.Fatalf("[dogo] dogo.json (SourceExt) error. \n")
-		d.SourceExt = ".go|.c|.cpp|.h"
+	if d.SourceExt == nil || len(d.SourceExt) == 0 {
+		d.SourceExt = []string{".c", ".cpp", ".go", ".h"}
 	}
 	if d.BuildCmd == "" {
-		//log.Fatalf("[dogo] dogo.json (BuildCmd) error. \n")
 		d.BuildCmd = "go build ."
 	}
 	if d.RunCmd == "" {
-		//log.Fatalf("[dogo] dogo.json (RunCmd) error. \n")
 		d.RunCmd = filepath.Base(console.WorkingDir)
 		if runtime.GOOS == "windows" {
 			d.RunCmd += ".exe"
@@ -109,27 +92,25 @@ func (d *Dogo) NewMonitor() {
 	d.Files = make(map[string]time.Time)
 	d.InitFiles()
 
-	//FIXME: add console support.
-
-	//FIXME: moniting directories: add file, delete file.
-
-	//FIXME: Multi commands.
+	//TODO: add console support.
+	//TODO: Multi commands.
 }
 
 func (d *Dogo) InitFiles() {
-	extends := strings.Split(d.SourceExt, "|")
-
 	//scan source directories
 	for _, dir := range d.SourceDir {
 		filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 			if err != nil {
-				d.FmtPrintf("%s\n", err)
+				fmt.Printf("%s\n", err)
 				return err
 			}
 
-			for _, ext := range extends {
+			if f.IsDir() {
+				d.sourceDir = append(d.sourceDir, path)
+			}
+
+			for _, ext := range d.SourceExt {
 				if filepath.Ext(path) == ext {
-					//fmt.Println(path)
 					d.Files[path] = f.ModTime()
 					break
 				}
@@ -142,54 +123,41 @@ func (d *Dogo) InitFiles() {
 
 func (d *Dogo) BuildAndRun() {
 	if d.cmd != nil && d.cmd.Process != nil {
-		d.FmtPrintf("[dogo] Terminate the process %d: ", d.cmd.Process.Pid)
+		fmt.Printf("[dogo] Terminate the process %d: ", d.cmd.Process.Pid)
 		if err := d.cmd.Process.Kill(); err != nil {
-			d.FmtPrintf("\n%s\n", err)
+			fmt.Printf("\n%s\n", err)
 		} else {
-			d.FmtPrintf("success.\n")
+			fmt.Printf("success.\n")
 		}
 	}
 
 	if err := d.Build(); err != nil {
-		d.FmtPrintf("[dogo] Build failed: %s\n\n", err)
+		fmt.Printf("[dogo] Build failed: %s\n\n", err)
 	} else {
-		//run program
-		d.FmtPrintf("[dogo] Start the process: %s\n\n", d.RunCmd)
-		if d.runCount > 0 {
-			d.decreasing = d.Decreasing
-		}
-		d.runCount++
+		fmt.Printf("[dogo] Start the process: %s\n\n", d.RunCmd)
 		go d.Run()
 	}
 }
 
 //build
 func (d *Dogo) Build() error {
-	d.FmtPrintf("[dogo] Start build: ")
+	fmt.Printf("[dogo] Start build: ")
+
 	args := console.ParseText(d.BuildCmd)
 	out, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
-		fullOut := string(out)
-		if d.buildErr == "" || d.buildErr != fullOut {
-			d.FmtPrintf("\n%s", fullOut)
-			d.retries = 0
-			d.buildErr = fullOut
-		} else {
-			//d.FmtPrintf(".")
-			d.retries++
-		}
+		fmt.Printf("\n%s", string(out))
 		return err
-	} else {
-		d.retries = 0
-		d.buildErr = ""
-		d.FmtPrintf("success.\n")
-		return nil
 	}
+
+	fmt.Printf("success.\n")
+	return nil
 }
 
 //run it
 func (d *Dogo) Run() {
 	args := console.ParseText(d.RunCmd)
+
 	d.cmd = exec.Command(args[0], args[1:]...)
 	d.cmd.Stdin = os.Stdin
 	d.cmd.Stdout = os.Stdout
@@ -197,19 +165,7 @@ func (d *Dogo) Run() {
 	err := d.cmd.Run()
 	if err != nil {
 		fmt.Printf("%s\n", err)
-	} else {
-		d.cmd = nil
 	}
-}
 
-func (d *Dogo) LogPrintf(format string, v ...interface{}) {
-	if d.retries == 0 {
-		log.Printf(format, v...)
-	}
-}
-
-func (d *Dogo) FmtPrintf(format string, v ...interface{}) {
-	if d.retries == 0 {
-		fmt.Printf(format, v...)
-	}
+	d.cmd = nil
 }

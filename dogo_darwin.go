@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -29,7 +30,7 @@ func (d *Dogo) Compare() {
 	for p, t := range d.Files {
 		info, err := os.Stat(p)
 		if err != nil {
-			d.FmtPrintf("%s\n", err)
+			fmt.Printf("%s\n", err)
 			continue
 		}
 
@@ -39,7 +40,7 @@ func (d *Dogo) Compare() {
 		if nt.Sub(t) > 0 {
 			d.Files[p] = nt
 			changed = true
-			d.FmtPrintf("[dogo] Changed files: %s\n", filepath.Base(p))
+			fmt.Printf("[dogo] Changed files: %s\n", filepath.Base(p))
 		}
 	}
 

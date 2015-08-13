@@ -5,47 +5,87 @@
 package main
 
 import (
-	"os"
+	"fmt"
+	"log"
 	"path/filepath"
-	"time"
+	"strings"
 )
 
 func (d *Dogo) Monitor() {
-	for {
-		d.Compare()
+	watcher, err := NewWatcher()
+	if err != nil {
+		log.Fatalf("[dogo] NewWatcher Error: %s\n", err.Error())
+	}
 
-		if d.isModified == true {
-			d.BuildAndRun()
+	mask := IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MODIFY | IN_MOVE | IN_MOVED_TO | IN_MOVE_SELF | IN_ISDIR
+
+	for _, dir := range d.sourceDir {
+		err = watcher.AddWatch(dir, mask)
+		if err != nil {
+			log.Fatalf("[dogo] AddWatch Error: %s\n", err.Error())
 		}
+	}
 
-		time.Sleep(time.Duration(1 * time.Second))
+	for {
+		select {
+		case ev := <-watcher.Event:
+			fmt.Printf("[dogo] Changed files: %v\n", ev)
+
+			masks := getMask(ev)
+
+			_, isCreate := masks[IN_CREATE]
+			_, isDelete := masks[IN_DELETE]
+			if !isDelete {
+				_, isDelete = masks[IN_DELETE_SELF]
+			}
+			_, isModify := masks[IN_MODIFY]
+			_, isMove := masks[IN_MOVE]
+			if !isMove {
+				_, isMove = masks[IN_MOVED_TO]
+			}
+			if !isMove {
+				_, isMove = masks[IN_MOVE_SELF]
+			}
+			_, isDir := masks[IN_ISDIR]
+
+			if isDir && isCreate {
+				err = watcher.AddWatch(ev.Name, mask)
+				if err != nil {
+					log.Fatalf("[dogo] AddWatch Error: %s\n", err.Error())
+				}
+			}
+
+			if isDir && isDelete {
+				err = watcher.RemoveWatch(ev.Name)
+				if err != nil {
+					log.Fatalf("[dogo] RemoveWatch Error: %s\n", err.Error())
+				}
+			}
+
+			if !isDir && (isDelete || isModify || isMove) {
+				ext := strings.ToLower(filepath.Ext(ev.Name))
+				for _, v := range d.SourceExt {
+					if ext == strings.ToLower(v) {
+						d.BuildAndRun()
+						break
+					}
+				}
+			}
+		case err := <-watcher.Error:
+			fmt.Printf("[dogo] Error: %s\n", err.Error())
+		}
 	}
 }
 
-//compare source file's modify time
-func (d *Dogo) Compare() {
-	changed := false
-
-	for p, t := range d.Files {
-		info, err := os.Stat(p)
-		if err != nil {
-			d.FmtPrintf("%s\n", err)
-			continue
-		}
-
-		//new modtime
-		nt := info.ModTime()
-
-		if nt.Sub(t) > 0 {
-			d.Files[p] = nt
-			changed = true
-			d.FmtPrintf("[dogo] Changed files: %s\n", filepath.Base(p))
+func getMask(ev *Event) map[uint32]string {
+	masks := map[uint32]string{}
+	m := ev.Mask
+	for _, b := range eventBits {
+		if m&b.Value == b.Value {
+			m &^= b.Value
+			masks[b.Value] = b.Name
 		}
 	}
 
-	if changed == true {
-		d.isModified = true
-	} else {
-		d.isModified = false
-	}
+	return masks
 }
