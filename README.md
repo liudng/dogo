@@ -24,7 +24,7 @@ Here are config file sample, save file as **dogo.json**:
     "SourceDir": [
         "{GOPATH}/src/github.com/liudng/dogo/example"
     ],
-    "SourceExt": ".go|.c|.cpp|.h",
+    "SourceExt": [".c", ".cpp", ".go", ".h"],
     "BuildCmd": "go build github.com/liudng/dogo/example",
     "RunCmd": "example.exe",
     "Decreasing": 1
@@ -41,7 +41,7 @@ Here are config file sample, save file as **dogo.json**:
 
 **RunCmd**: the program (full) path.
 
-**Decreasing**: Ignore the number of modifies, after build.
+**Decreasing**: Ignore the number of modifies, it's only start counting after build success.
 
 ## Start monitoring
 

@@ -32,7 +32,7 @@ dogo 的配置文件格式如下:
     "SourceDir": [
         "{GOPATH}/src/github.com/liudng/dogo/example"
     ],
-    "SourceExt": ".go|.c|.cpp|.h",
+    "SourceExt": [".c", ".cpp", ".go", ".h"],
     "BuildCmd": "go build github.com/liudng/dogo/example",
     "RunCmd": "example.exe",
     "Decreasing": 1
