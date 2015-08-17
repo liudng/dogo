@@ -7,6 +7,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/zhgo/config"
 	"github.com/zhgo/console"
 	"runtime"
 	"strings"
@@ -24,7 +25,7 @@ func main() {
 	gopath := console.Getenv("GOPATH")
 	c = strings.Replace(c, "{GOPATH}", gopath, -1)
 	r := map[string]string{"{GOPATH}": gopath}
-	err := console.NewConfig(c).Replace(r).Parse(&dogo)
+	err := config.NewConfig(c).Replace(r).Parse(&dogo)
 	if err != nil {
 		fmt.Printf("[dogo] Warning: no configuration file loaded.\n")
 	} else {
