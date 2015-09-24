@@ -9,6 +9,7 @@ import (
     "log"
     "path/filepath"
     "strings"
+    "time"
 )
 
 func (d *Dogo) Monitor() {
@@ -31,7 +32,7 @@ func (d *Dogo) Monitor() {
     for {
         select {
         case ev := <-watcher.Event:
-            fmt.Printf("[dogo] Changed files: %v\n", ev)
+            fmt.Printf("[dogo] Changed files: %v\n", ev.Name)
 
             masks := getMask(ev)
 
@@ -68,16 +69,14 @@ func (d *Dogo) Monitor() {
                 ext := strings.ToLower(filepath.Ext(ev.Name))
                 for _, v := range d.SourceExt {
                     if ext == strings.ToLower(v) {
-                        // d.BuildAndRun()
                         if decreasing > 0 {
                             decreasing--
                             fmt.Printf("[dogo] Decreasing %d: %v\n", decreasing, ev.Name)
                         } else {
                             d.isModified = true
-                            fmt.Printf("[dogo] Changed files: %v\n", ev.Name)
                             d.BuildAndRun()
                             decreasing = d.Decreasing
-                            // time.Sleep(time.Duration(1 * time.Second))
+                            time.Sleep(time.Duration(1 * time.Second))
                         }
 
                         break
