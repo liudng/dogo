@@ -41,7 +41,7 @@ Here are config file sample, save file as **dogo.json**:
 
 **RunCmd**: the program (full) path.
 
-**Decreasing**: Ignore the number of modifies, it's only start counting after build success.
+**Decreasing**: Ignore the number of modifies, it's only start counting after build success. Now it's supported in linux and windows.
 
 ## Start monitoring
 

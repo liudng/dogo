@@ -2,3 +2,4 @@
 *.iml
 *.exe
 dogo
+*.sublime-*
