@@ -30,7 +30,7 @@ func (d *Dogo) Compare() {
 	for p, t := range d.Files {
 		info, err := os.Stat(p)
 		if err != nil {
-			fmt.Printf("%s\n", err)
+			delete(d.Files, p)
 			continue
 		}
 
