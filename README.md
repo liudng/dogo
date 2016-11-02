@@ -16,7 +16,7 @@ go get github.com/liudng/dogo
 
 ## Create config
 
-Here are config file sample, save file as **dogo.json**:
+Here's a config file sample, save the file as **dogo.json**:
 
 ```json
 {
@@ -51,7 +51,7 @@ type the command to start:
 dogo
 ```
 
-or, specify config file with -c
+or, specify a config file with -c
 
 ```sh
 dogo -c=/path/to/dogo.json
