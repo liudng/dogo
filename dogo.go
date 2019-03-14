@@ -5,168 +5,213 @@
 package main
 
 import (
-    "fmt"
-    "github.com/zhgo/console"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "runtime"
-    "time"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/zhgo/console"
 )
 
 //Dogo struct
 type Dogo struct {
-    //source files
-    SourceDir []string
+	//source files
+	SourceDir []string
 
-    //source files
-    sourceDir []string
+	//source files
+	sourceDir []string
 
-    //file extends
-    SourceExt []string
+	//file extends
+	SourceExt []string
 
-    //Working Dir
-    WorkingDir string
+	//Working Dir
+	WorkingDir string
 
-    //build command
-    BuildCmd string
+	//build command
+	BuildCmd string
 
-    //run command
-    RunCmd string
+	//run command
+	RunCmd string
 
-    //Decreasing
-    Decreasing uint8
+	//Decreasing
+	Decreasing uint8
 
-    //file list
-    Files map[string]time.Time
+	//file list
+	Files map[string]time.Time
 
-    //Cmd object
-    cmd *exec.Cmd
+	//Ignored
+	Ignored []string
 
-    //file modified
-    isModified bool
+	//Cmd object
+	cmd *exec.Cmd
+
+	//file modified
+	isModified bool
 }
 
 //start new monitor
 func (d *Dogo) NewMonitor() {
-    if d.WorkingDir == "" {
-        d.WorkingDir = console.WorkingDir
-    }
-    if len(d.SourceDir) == 0 {
-        d.SourceDir = append(d.SourceDir, console.WorkingDir)
-    }
-    if d.SourceExt == nil || len(d.SourceExt) == 0 {
-        d.SourceExt = []string{".c", ".cpp", ".go", ".h"}
-    }
-    if d.BuildCmd == "" {
-        d.BuildCmd = "go build ."
-    }
-    if d.RunCmd == "" {
-        d.RunCmd = filepath.Base(console.WorkingDir)
-        if runtime.GOOS == "windows" {
-            d.RunCmd += ".exe"
-        }
-    }
+	if d.WorkingDir == "" {
+		d.WorkingDir = console.WorkingDir
+	}
+	if len(d.SourceDir) == 0 {
+		d.SourceDir = append(d.SourceDir, console.WorkingDir)
+	}
+	if d.SourceExt == nil || len(d.SourceExt) == 0 {
+		d.SourceExt = []string{".c", ".cpp", ".go", ".h"}
+	}
+	if d.BuildCmd == "" {
+		d.BuildCmd = "go build ."
+	}
+	if d.RunCmd == "" {
+		d.RunCmd = filepath.Base(console.WorkingDir)
+		if runtime.GOOS == "windows" {
+			d.RunCmd += ".exe"
+		}
+	}
 
-    // Append the current directory to the PATH for compatible linux.
-    console.Setenv("PATH", console.Getenv("PATH")+string(os.PathListSeparator)+d.WorkingDir)
+	// Append the current directory to the PATH for compatible linux.
+	console.Setenv("PATH", console.Getenv("PATH")+string(os.PathListSeparator)+d.WorkingDir)
 
-    console.Chdir(d.WorkingDir)
-    fmt.Printf("[dogo] Working Directory:\n")
-    fmt.Printf("       %s\n", d.WorkingDir)
+	console.Chdir(d.WorkingDir)
+	fmt.Printf("[dogo] Working Directory:\n")
+	fmt.Printf("       %s\n", d.WorkingDir)
 
-    fmt.Printf("[dogo] Monitoring Directories:\n")
-    for _, dir := range d.SourceDir {
-        fmt.Printf("       %s\n", dir)
-    }
+	if len(d.Ignored) > 0 {
+		fmt.Printf("[dogo] Ignoring:\n")
+		for i, ignored := range d.Ignored {
+			if !filepath.IsAbs(ignored) {
+				absPath, err := filepath.Abs(ignored)
+				if err != nil {
+					fmt.Printf("Resource %s not found, skipping", ignored)
+				} else {
+					d.Ignored[i] = absPath
+					fmt.Printf("       %s\n", d.Ignored[i])
+				}
+			}
+		}
+	}
 
-    fmt.Printf("[dogo] File extends:\n")
-    fmt.Printf("       %s\n", d.SourceExt)
+	fmt.Printf("[dogo] Monitoring Directories:\n")
+	for _, dir := range d.SourceDir {
+		fmt.Printf("       %s\n", dir)
+	}
 
-    fmt.Printf("[dogo] Build command:\n")
-    fmt.Printf("       %s\n", d.BuildCmd)
+	fmt.Printf("[dogo] File extends:\n")
+	fmt.Printf("       %s\n", d.SourceExt)
 
-    fmt.Printf("[dogo] Run command:\n")
-    fmt.Printf("       %s\n", d.RunCmd)
+	fmt.Printf("[dogo] Build command:\n")
+	fmt.Printf("       %s\n", d.BuildCmd)
 
-    d.Files = make(map[string]time.Time)
-    d.InitFiles()
+	fmt.Printf("[dogo] Run command:\n")
+	fmt.Printf("       %s\n", d.RunCmd)
 
-    //TODO: add console support.
-    //TODO: Multi commands.
+	d.Files = make(map[string]time.Time)
+	d.InitFiles()
+
+	//TODO: add console support.
+	//TODO: Multi commands.
 }
 
 func (d *Dogo) InitFiles() {
-    //scan source directories
-    for _, dir := range d.SourceDir {
-        filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
-            if err != nil {
-                fmt.Printf("%s\n", err)
-                return err
-            }
+	//scan source directories
+	for _, dir := range d.SourceDir {
+		filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+			if err != nil {
+				fmt.Printf("%s\n", err)
+				return err
+			}
 
-            if f.IsDir() {
-                d.sourceDir = append(d.sourceDir, path)
-            }
+			if f.IsDir() {
+				if d.isDirectoryIgnored(path) {
+					return nil
+				}
+				d.sourceDir = append(d.sourceDir, path)
+			} else {
+				if d.isFileIgnored(path) {
+					return nil
+				}
+			}
 
-            for _, ext := range d.SourceExt {
-                if filepath.Ext(path) == ext {
-                    d.Files[path] = f.ModTime()
-                    break
-                }
-            }
+			for _, ext := range d.SourceExt {
+				if filepath.Ext(path) == ext {
+					d.Files[path] = f.ModTime()
+					break
+				}
+			}
 
-            return nil
-        })
-    }
+			return nil
+		})
+	}
 }
 
 func (d *Dogo) BuildAndRun() {
-    if d.cmd != nil && d.cmd.Process != nil {
-        fmt.Printf("[dogo] Terminate the process %d: ", d.cmd.Process.Pid)
+	if d.cmd != nil && d.cmd.Process != nil {
+		fmt.Printf("[dogo] Terminate the process %d: ", d.cmd.Process.Pid)
 
-        if err := d.cmd.Process.Kill(); err != nil {
-            fmt.Printf("\n%s %s\n", d.cmd.ProcessState.String(), err)
-        } else {
-            fmt.Printf("%s\n", d.cmd.ProcessState.String())
-        }
-    }
+		if err := d.cmd.Process.Kill(); err != nil {
+			fmt.Printf("\n%s %s\n", d.cmd.ProcessState.String(), err)
+		} else {
+			fmt.Printf("%s\n", d.cmd.ProcessState.String())
+		}
+	}
 
-    if err := d.Build(); err != nil {
-        fmt.Printf("[dogo] Build failed: %s\n\n", err)
-    } else {
-        fmt.Printf("[dogo] Start the process: %s\n\n", d.RunCmd)
-        go d.Run()
-    }
+	if err := d.Build(); err != nil {
+		fmt.Printf("[dogo] Build failed: %s\n\n", err)
+	} else {
+		fmt.Printf("[dogo] Start the process: %s\n\n", d.RunCmd)
+		go d.Run()
+	}
 }
 
 //build
 func (d *Dogo) Build() error {
-    fmt.Printf("[dogo] Start build: ")
+	fmt.Printf("[dogo] Start build: ")
 
-    args := console.ParseText(d.BuildCmd)
-    out, err := exec.Command(args[0], args[1:]...).CombinedOutput()
-    if err != nil {
-        fmt.Printf("\n%s", string(out))
-        return err
-    }
+	args := console.ParseText(d.BuildCmd)
+	out, err := exec.Command(args[0], args[1:]...).CombinedOutput()
+	if err != nil {
+		fmt.Printf("\n%s", string(out))
+		return err
+	}
 
-    fmt.Printf("success.\n")
-    return nil
+	fmt.Printf("success.\n")
+	return nil
 }
 
 //run it
 func (d *Dogo) Run() {
-    args := console.ParseText(d.RunCmd)
+	args := console.ParseText(d.RunCmd)
 
-    d.cmd = exec.Command(args[0], args[1:]...)
-    d.cmd.Stdin = os.Stdin
-    d.cmd.Stdout = os.Stdout
-    d.cmd.Stderr = os.Stderr
-    err := d.cmd.Run()
-    if err != nil {
-        fmt.Printf("%s\n", err)
-    }
+	d.cmd = exec.Command(args[0], args[1:]...)
+	d.cmd.Stdin = os.Stdin
+	d.cmd.Stdout = os.Stdout
+	d.cmd.Stderr = os.Stderr
+	err := d.cmd.Run()
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
 
-    d.cmd = nil
+	d.cmd = nil
+}
+
+func (d *Dogo) isDirectoryIgnored(path string) bool {
+	for _, ignored := range d.Ignored {
+		if ignored == path {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *Dogo) isFileIgnored(path string) bool {
+	for _, ignored := range d.Ignored {
+		if strings.HasPrefix(path, ignored) {
+			return true
+		}
+	}
+	return false
 }

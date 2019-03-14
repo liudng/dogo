@@ -10,6 +10,6 @@ import (
 )
 
 func main() {
-	log.Println("Some text here.\n")
+	log.Println("Some text here")
 	//log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("e:/home"))))
 }
