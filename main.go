@@ -7,10 +7,11 @@ package main
 import (
     "flag"
     "fmt"
-    "github.com/zhgo/config"
-    "github.com/zhgo/console"
     "runtime"
     "strings"
+
+    "github.com/zhgo/config"
+    "github.com/zhgo/console"
 )
 
 func main() {

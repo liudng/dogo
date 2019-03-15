@@ -1,10 +1,10 @@
 {
-  "WorkingDir": "{GOPATH}/src/github.com/samacs/dogo/example",
+  "WorkingDir": "{GOPATH}/src/github.com/liudng/dogo/example",
   "SourceDir": [
-    "{GOPATH}/src/github.com/samacs/dogo/example"
+    "{GOPATH}/src/github.com/liudng/dogo/example"
   ],
   "SourceExt": [".c", ".cpp", ".go", ".h"],
-  "BuildCmd": "go build github.com/samacs/dogo/example",
+  "BuildCmd": "go build github.com/liudng/dogo/example",
   "RunCmd": "example",
   "Decreasing": 1,
   "Ignored": ["vendor", "ignored.go"]
