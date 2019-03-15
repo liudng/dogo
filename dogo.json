@@ -6,5 +6,6 @@
   "SourceExt": [".c", ".cpp", ".go", ".h"],
   "BuildCmd": "go build github.com/liudng/dogo/example",
   "RunCmd": "example",
-  "Decreasing": 1
+  "Decreasing": 1,
+  "Ignored": ["vendor", "ignored.go"]
 }

@@ -6,12 +6,14 @@ package main
 
 import (
     "fmt"
-    "github.com/zhgo/console"
     "os"
     "os/exec"
     "path/filepath"
     "runtime"
+    "strings"
     "time"
+
+    "github.com/zhgo/console"
 )
 
 //Dogo struct
@@ -39,6 +41,9 @@ type Dogo struct {
 
     //file list
     Files map[string]time.Time
+
+    //Ignored
+    Ignored []string
 
     //Cmd object
     cmd *exec.Cmd
@@ -75,6 +80,21 @@ func (d *Dogo) NewMonitor() {
     fmt.Printf("[dogo] Working Directory:\n")
     fmt.Printf("       %s\n", d.WorkingDir)
 
+    if len(d.Ignored) > 0 {
+        fmt.Printf("[dogo] Ignoring:\n")
+        for i, ignored := range d.Ignored {
+            if !filepath.IsAbs(ignored) {
+                absPath, err := filepath.Abs(ignored)
+                if err != nil {
+                    fmt.Printf("Resource %s not found, skipping", ignored)
+                } else {
+                    d.Ignored[i] = absPath
+                    fmt.Printf("       %s\n", d.Ignored[i])
+                }
+            }
+        }
+    }
+
     fmt.Printf("[dogo] Monitoring Directories:\n")
     for _, dir := range d.SourceDir {
         fmt.Printf("       %s\n", dir)
@@ -106,7 +126,14 @@ func (d *Dogo) InitFiles() {
             }
 
             if f.IsDir() {
+                if d.isDirectoryIgnored(path) {
+                    return nil
+                }
                 d.sourceDir = append(d.sourceDir, path)
+            } else {
+                if d.isFileIgnored(path) {
+                    return nil
+                }
             }
 
             for _, ext := range d.SourceExt {
@@ -169,4 +196,22 @@ func (d *Dogo) Run() {
     }
 
     d.cmd = nil
+}
+
+func (d *Dogo) isDirectoryIgnored(path string) bool {
+    for _, ignored := range d.Ignored {
+        if ignored == path {
+            return true
+        }
+    }
+    return false
+}
+
+func (d *Dogo) isFileIgnored(path string) bool {
+    for _, ignored := range d.Ignored {
+        if strings.HasPrefix(path, ignored) {
+            return true
+        }
+    }
+    return false
 }
